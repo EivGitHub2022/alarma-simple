@@ -1,95 +1,16 @@
 #include <unity.h>
 #include <alarma.h>
 #include <timer_systick.h>
-#include <stdbool.h>
-#include <string.h>
 #include "comando_mascara.h"
-
-typedef struct Flags Flags;
-
-/**
- * @brief Banderas que representan indicadores (I_) y timers (T_)
- * 
- */
-typedef enum Banderas{
-    I_DETECCION     = 0x01,
-    I_ARMADO        = 0x02,
-    I_ALERTA        = 0x04,
-    I_TEMPORIZADO   = 0x08,
-    T_ARMADO        = 0x10,
-    T_DISPARO       = 0x20,
-    T_ALERTA        = 0x40
-}Banderas;
-
+#include "banderas.h"
 
 static struct TestAlarma {
     Alarma alarma;
     int banderas;
 }self;
 
-static void copia_elem(char * restrict * restrict destino, const char * restrict * restrict origen,const char * fin_destino)
-{
-    const size_t capacidad = fin_destino-*destino;
-    const size_t nOrigen = strlen(*origen);
-    const size_t n = (nOrigen + 2 <= capacidad) ? nOrigen: capacidad - 2;
-    if (!n) return;
-    memcpy(*destino,*origen,n);
-    *destino += n; 
-    **destino=' ';
-    *(++*destino)=0;
-    *origen += nOrigen + 1;
-}
-static void salta_elem(const char *restrict *restrict origen)
-{
-    const size_t nOrigen = strlen(*origen);
-    *origen += nOrigen + 1;
-}
-static void copia_mascara(char * restrict * restrict destino,size_t lDestino,const char * restrict lista,size_t lLista,unsigned int mascara)
-{
-    const char *destino_fin = *destino + lDestino;
-    const char *lista_fin   = lista + lLista;
-    if (lDestino)
-        **destino = 0;
-
-    while (*destino < destino_fin && lista < lista_fin && mascara){
-        const bool copiar = mascara & 1;
-        mascara >>= 1;
-        if(copiar)
-            copia_elem(destino,&lista,destino_fin);
-        else
-            salta_elem(&lista);
-    } 
-}
-
-static const char *comparacion(const int esperado,const int obtenido)
-{
-    static const char banderas[]="I_DETECCION\000I_ARMADO\000I_ALERTA\000I_TEMPORIZADO\000T_ARMADO\000T_DISPARO\000T_ALERTA";
-    static const char etiquetas[]="APAGADAS:[\000]\000ENCENDIDAS:[\000]";
-    static char mensaje[sizeof(banderas)+sizeof(etiquetas)+4];
-
-    char *pmsg = mensaje;
-    char *const fmsg = mensaje + sizeof(mensaje);
-    const char *petiq = etiquetas;
-
-    const int diferencia = esperado ^ obtenido;
-    const int apagadas = diferencia & esperado;
-    const int encendidas = diferencia & obtenido;
-
-    mensaje[0]=0;
-    if (apagadas){
-        copia_elem(&pmsg,&petiq,fmsg);
-        if (fmsg>pmsg)
-            copia_mascara(&pmsg,fmsg-pmsg,banderas,sizeof(banderas),apagadas);
-        copia_elem(&pmsg,&petiq,fmsg);
-    }else{
-        salta_elem(&petiq);
-        if (fmsg>pmsg)
-            copia_mascara(&pmsg,fmsg-pmsg,banderas,sizeof(banderas),encendidas);
-        salta_elem(&petiq);
-    }
-    return mensaje;
-}
-#define TEST_BANDERAS(banderas_) TEST_ASSERT_EQUAL_HEX8_MESSAGE(banderas_,self.banderas,comparacion(banderas_,self.banderas))
+#define TEST_BANDERAS(banderas_) TEST_ASSERT_MESSAGE(Banderas_sonIguales(banderas_, self.banderas),\
+                                    Banderas_mensajeDiferencias(banderas_,self.banderas))
 
 static const Comando *const cmdIDeteccion       = COMANDO_MASCARA(&self.banderas, I_DETECCION    ,true);
 static const Comando *const cmdIFinDeteccion    = COMANDO_MASCARA(&self.banderas, I_DETECCION    ,false);

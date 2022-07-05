@@ -29,10 +29,10 @@ static bool DESARMADA(Alarma *ctx,int evento)
 }
 
 
-static bool ARMADA(Alarma *ctx, int estado)
+static bool ARMADA(Alarma *ctx, int evento)
 {
     bool consumeEvento = true;
-    switch (estado)
+    switch (evento)
     {
     break; case EID_ENTRA_ESTADO:
         Alarma_indicaArmada(ctx);
