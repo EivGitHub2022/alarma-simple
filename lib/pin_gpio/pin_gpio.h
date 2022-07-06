@@ -3,10 +3,12 @@
 #include <stm32f1xx.h>
 #include <stdbool.h>
 
-typedef struct Pin{
+typedef struct Pin Pin;
+
+struct Pin{
     GPIO_TypeDef *puerto;
     int numeroDePin;
-} Pin;
+};
 
 void Pin_init(Pin *self, GPIO_TypeDef *puerto,int numeroDePin);
 
